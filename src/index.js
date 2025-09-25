@@ -15,6 +15,6 @@ root.render(
 );
 
 // ⬇️ Aktifkan PWA
-serviceWorkerRegistration.register();
+serviceWorkerRegistration.register(); //
 
 reportWebVitals();
