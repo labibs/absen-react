@@ -3,11 +3,7 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.ico',
-  '/static/js/bundle.js',
-  '/static/js/main.chunk.js',
-  '/static/js/0.chunk.js',
-  '/static/css/main.css'
+  '/favicon.ico'
 ];
 
 self.addEventListener('install', (event) => {
@@ -39,3 +35,17 @@ self.addEventListener('fetch', (event) => {
       .then((response) => response || fetch(event.request))
   );
 });
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request).then((res) => {
+        return caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, res.clone());
+          return res;
+        });
+      });
+    })
+  );
+});
+
