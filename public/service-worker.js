@@ -1,17 +1,7 @@
-const CACHE_NAME = "absen-pwa-v1";
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.ico'
-];
+const CACHE_NAME = 'absen-cache-v1';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
-  );
-  self.skipWaiting(); // langsung activate
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -26,26 +16,30 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  self.clients.claim(); // ambil alih langsung
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => response || fetch(event.request))
-  );
-});
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse; // ✅ Pakai dari cache
+      }
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request).then((res) => {
-        return caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, res.clone());
-          return res;
+      // 🔁 Kalau tidak ada, ambil dari jaringan & simpan ke cache
+      return fetch(event.request)
+        .then((response) => {
+          return caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, response.clone());
+            return response;
+          });
+        })
+        .catch(() => {
+          // 🔻 Kalau gagal fetch (misal offline & tidak dicache), fallback
+          if (event.request.mode === 'navigate') {
+            return caches.match('/');
+          }
         });
-      });
     })
   );
 });
-
